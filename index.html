@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מחשבון זכאויות מילואים</title>
+    <!-- שימוש בספריית סמלים (Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Flatpickr (סלקטור תאריכים חכם) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #10b981;
+            --highlight: #f59e0b;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px 10px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        h1 {
+            color: var(--primary);
+            margin: 0 0 10px 0;
+            font-size: 1.8rem;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary);
+            font-size: 0.95rem;
+        }
+
+        select, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            background-color: white;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        /* עיצוב שורות תקופות המילואים */
+        #periods-container {
+            margin-bottom: 15px;
+        }
+
+        .period-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+            margin-bottom: 15px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .date-input-group {
+            flex: 2;
+            min-width: 200px;
+        }
+        
+        .type-input-group {
+            flex: 1.5;
+            min-width: 150px;
+        }
+
+        .remove-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+            flex-shrink: 0;
+            margin-bottom: 2px;
+        }
+
+        .remove-btn:hover { background: #dc2626; }
+
+        .actions-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button.btn {
+            border: none;
+            padding: 14px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.05rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button.btn:active { transform: scale(0.98); }
+
+        button.btn-primary { background: var(--primary); color: white; flex: 2; }
+        button.btn-primary:hover { opacity: 0.9; }
+
+        button.btn-secondary { background: white; color: var(--primary); border: 2px solid var(--primary); flex: 1; }
+        button.btn-secondary:hover { background: #f0fdf4; }
+
+        #results-area {
+            display: none;
+            margin-top: 35px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .total-summary {
+            text-align: center;
+            padding: 25px 15px;
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .total-days-number {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .forecast-section, .financial-breakdown {
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .forecast-section {
+            background: #e0f2fe;
+            border: 1px solid #bae6fd;
+        }
+
+        .financial-breakdown {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+        }
+
+        .forecast-section h3, .financial-breakdown h3 {
+            margin: 0 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .forecast-section h3 { color: #0284c7; }
+        .financial-breakdown h3 { color: #b45309; }
+
+        .forecast-item {
+            display: flex;
+            gap: 15px;
+            background: white;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            align-items: flex-start;
+        }
+
+        .forecast-item:last-child { margin-bottom: 0; }
+
+        .forecast-icon {
+            color: #38bdf8;
+            font-size: 1.5rem;
+            margin-top: 2px;
+        }
+        
+        .forecast-item.achieved .forecast-icon { color: var(--secondary); }
+
+        .forecast-content {
+            font-size: 0.95rem;
+            color: #334155;
+            line-height: 1.4;
+        }
+
+        .forecast-content strong {
+            color: #0f172a;
+            font-size: 1.05rem;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .financial-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #fcd34d;
+            font-size: 1.05rem;
+        }
+
+        .financial-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+            font-weight: bold;
+            font-size: 1.15rem;
+            color: #92400e;
+        }
+
+        .milestones-title {
+            font-size: 1.2rem;
+            color: var(--primary);
+            margin: 0 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .milestone-card {
+            padding: 18px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            background: white;
+            border: 1px solid var(--border);
+            border-right: 6px solid #cbd5e1;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .milestone-card.achieved {
+            border-right-color: var(--secondary);
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+
+        .milestone-card.highlight {
+            border-right-color: var(--highlight);
+            background: #fff8f1;
+            border-color: #fed7aa;
+        }
+        
+        .milestone-card.achieved.highlight {
+             background: linear-gradient(to left, #fff8f1, #ecfdf5);
+             border-right-color: var(--secondary);
+        }
+
+        .milestone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .milestone-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .milestone-status {
+            font-size: 0.9rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .status-achieved { background: #d1fae5; color: #065f46; }
+        .status-pending { background: #f1f5f9; color: #475569; }
+
+        .milestone-desc {
+            font-size: 0.95rem;
+            color: #4b5563;
+            margin: 0;
+        }
+        
+        .progress-bar-bg {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        .achieved .progress-bar-fill { background: var(--secondary); }
+
+        @media (max-width: 550px) {
+            .type-input-group, .date-input-group { width: 100%; flex: 100%; }
+            .remove-btn { width: 100%; margin-top: 5px; }
+            .actions-row { flex-direction: column; }
+            .total-days-number { font-size: 3rem; }
+            .financial-item { flex-direction: column; gap: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1><i class="fa-solid fa-calculator"></i> מחשבון זכאויות מילואים</h1>
+        <p class="subtitle">חישוב מותאם אישית לפי תאריכים ומדרגי שירות</p>
+    </header>
+
+    <div class="form-section">
+        <label><i class="fa-regular fa-calendar-days"></i> הזן תקופות מילואים:</label>
+        <div id="periods-container">
+            <!-- השורות יתווספו לכאן -->
+        </div>
+
+        <div class="actions-row">
+            <button class="btn btn-secondary" onclick="addPeriod()">
+                <i class="fa-solid fa-plus"></i> הוסף תקופה
+            </button>
+            <button class="btn btn-primary" onclick="calculate()">
+                <i class="fa-solid fa-chart-line"></i> חשב זכאויות וצפי
+            </button>
+        </div>
+    </div>
+
+    <!-- אזור תוצאות -->
+    <div id="results-area">
+        <div class="total-summary">
+            <div>סך הכל ימי מילואים מצטברים:</div>
+            <div class="total-days-number" id="total-days">0</div>
+            <div>ימים המזכים בהטבות בשנת המס הנוכחית</div>
+        </div>
+
+        <div class="forecast-section" id="forecast-container">
+            <!-- יוזן דינמית -->
+        </div>
+
+        <div class="financial-breakdown">
+            <h3><i class="fa-solid fa-coins"></i> הערכת מענקים ישירים (שנצברו עד כה)</h3>
+            <div class="financial-item">
+                <span>מענקי משפחה/כלכלת בית (<span id="family-count">0</span> פעימות):</span>
+                <strong id="family-total">0 ש"ח</strong>
+            </div>
+            <div class="financial-item">
+                <span>תגמול מיוחד (החל מהיום ה-60):</span>
+                <strong id="special-total">0 ש"ח</strong>
+            </div>
+            <div class="financial-item" style="border-top: 2px solid #fcd34d; padding-top: 10px; margin-top: 5px;">
+                <span>סך הכל מענקים מצטברים בצו 8:</span>
+                <strong id="grand-total">0 ש"ח</strong>
+            </div>
+            <div style="font-size: 0.85rem; color: #92400e; margin-top: 10px; line-height: 1.4;">
+                * אינו כולל שכר מילואים בסיסי או תגמול נוסף שנתי המשולם במאי.<br>
+                <b>שימו לב לדיוק:</b> המערכת מחשבת את המענק פרופורציונלית בהתאם למדרג של *כל יום ויום* שהוזן, כדי להבטיח את הסכום המדויק גם במעברים בין תפקידים.
+            </div>
+        </div>
+
+        <h3 class="milestones-title"><i class="fa-solid fa-award"></i> מדרגות תגמול נוסף (שנתי)</h3>
+        <div id="milestones-container">
+            <!-- מדרגות יתווספו לכאן -->
+        </div>
+    </div>
+</div>
+
+<!-- סקריפטים של Flatpickr -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/he.js"></script>
+
+<script>
+    const rates = {
+        combat: { family: 833, daily: 133, weight: 3, name: "לוחם" },
+        support: { family: 600, daily: 60, weight: 2, name: "תומכ\"ל" },
+        rear: { family: 500, daily: 40, weight: 1, name: "עורפי" }
+    };
+
+    window.onload = function() {
+        addPeriod();
+    };
+
+    function addPeriod() {
+        const container = document.getElementById('periods-container');
+        const row = document.createElement('div');
+        row.className = 'period-row';
+        row.innerHTML = `
+            <div class="date-input-group">
+                <label>תאריכי תקופה</label>
+                <input type="text" class="date-range-picker" placeholder="בחר התחלה וסיום..." required>
+            </div>
+            <div class="type-input-group">
+                <label>מדרג שירות</label>
+                <select class="row-service-type">
+                    <option value="combat">לוחם / מדרג א'+</option>
+                    <option value="support">תומך לחימה / מדרג א'-ב'</option>
+                    <option value="rear">עורפי / מדרג ג' ומטה</option>
+                </select>
+            </div>
+            <button class="remove-btn" onclick="removePeriod(this)" title="הסר תקופה">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        `;
+        container.appendChild(row);
+
+        // הפעלת Flatpickr על השדה החדש
+        flatpickr(row.querySelector('.date-range-picker'), {
+            mode: "range",
+            dateFormat: "d/m/Y",
+            locale: "he",
+            showMonths: 1
+        });
+
+        updateRemoveButtons();
+    }
+
+    function removePeriod(btn) {
+        btn.closest('.period-row').remove();
+        updateRemoveButtons();
+    }
+
+    function updateRemoveButtons() {
+        const rows = document.querySelectorAll('.period-row');
+        const removeBtns = document.querySelectorAll('.remove-btn');
+        if (rows.length === 1) {
+            removeBtns[0].style.display = 'none';
+        } else {
+            removeBtns.forEach(btn => btn.style.display = 'flex');
+        }
+    }
+
+    function calculate() {
+        const rows = document.querySelectorAll('.period-row');
+        let daysMap = new Map();
+        let hasValidInput = false;
+
+        rows.forEach(row => {
+            const datePicker = row.querySelector('.date-range-picker')._flatpickr;
+            const sType = row.querySelector('.row-service-type').value;
+            
+            if (datePicker && datePicker.selectedDates.length > 0) {
+                hasValidInput = true;
+                
+                let start = datePicker.selectedDates[0];
+                let end = datePicker.selectedDates.length > 1 ? datePicker.selectedDates[1] : start;
+                
+                // איפוס שעות כדי למנוע קפיצות זמן ושגיאות במעבר ימים
+                start.setHours(0,0,0,0);
+                end.setHours(0,0,0,0);
+                
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    // יצירת מחרוזת תאריך לפי זמן מקומי (מונע את באג ה-Timezone)
+                    let year = d.getFullYear();
+                    let month = String(d.getMonth() + 1).padStart(2, '0');
+                    let day = String(d.getDate()).padStart(2, '0');
+                    let dateStr = `${year}-${month}-${day}`;
+                    
+                    if (!daysMap.has(dateStr)) {
+                        daysMap.set(dateStr, sType);
+                    } else {
+                        if (rates[sType].weight > rates[daysMap.get(dateStr)].weight) {
+                            daysMap.set(dateStr, sType);
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!hasValidInput) {
+            alert("אנא בחר תאריכים תקינים בלפחות תקופת מילואים אחת.");
+            return;
+        }
+
+        let sortedDates = Array.from(daysMap.keys()).sort();
+        const totalDays = sortedDates.length;
+        
+        document.getElementById('total-days').innerText = totalDays;
+        animateValue("total-days", 0, totalDays, 1000);
+
+        let familyGrantsCount = Math.floor(totalDays / 10);
+        let daysToCalculateFamily = familyGrantsCount * 10;
+        
+        let familyGrantsTotal = 0;
+        let specialDailyTotal = 0;
+
+        for (let i = 0; i < totalDays; i++) {
+            let dayNum = i + 1;
+            let dateStr = sortedDates[i];
+            let sType = daysMap.get(dateStr);
+            let dayRates = rates[sType];
+
+            // חישוב יחסי מדויק (פרופורציונלי) לכל יום בתוך עשרת הימים שנצברו
+            if (i < daysToCalculateFamily) {
+                familyGrantsTotal += (dayRates.family / 10);
+            }
+
+            // תגמול מיוחד נצבר מהיום ה-60
+            if (dayNum >= 60) {
+                specialDailyTotal += dayRates.daily;
+            }
+        }
+        
+        // עיגול התוצאה של המענק למניעת עשרונים ארוכים מחיבור שברים
+        familyGrantsTotal = Math.round(familyGrantsTotal);
+        const grandTotal = familyGrantsTotal + specialDailyTotal;
+
+        document.getElementById('family-count').innerText = familyGrantsCount;
+        document.getElementById('family-total').innerText = formatCurrency(familyGrantsTotal);
+        document.getElementById('special-total').innerText = formatCurrency(specialDailyTotal);
+        document.getElementById('grand-total').innerText = formatCurrency(grandTotal);
+
+        buildForecast(totalDays, sortedDates, daysMap);
+        buildMilestones(totalDays);
+
+        document.getElementById('results-area').style.display = 'block';
+        setTimeout(() => {
+            document.getElementById('results-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+
+    function buildForecast(totalDays, sortedDates, daysMap) {
+        let forecastHtml = '<h3><i class="fa-regular fa-calendar-check"></i> צפי תשלומים ותאריכים הבאים</h3>';
+        
+        if (totalDays > 0) {
+            let lastDateStr = sortedDates[sortedDates.length - 1];
+            let lastType = daysMap.get(lastDateStr);
+            let lastRates = rates[lastType];
+            
+            // המרה נקייה לזמן מקומי כדי למנוע קפיצות זמן בתחזית
+            let lastDateObj = new Date(lastDateStr + 'T00:00:00');
+
+            let daysToNextFamily = 10 - (totalDays % 10);
+            if (daysToNextFamily === 0) daysToNextFamily = 10;
+            
+            let nextFamilyDate = new Date(lastDateObj);
+            nextFamilyDate.setDate(nextFamilyDate.getDate() + daysToNextFamily);
+            
+            forecastHtml += `
+                <div class="forecast-item">
+                    <div class="forecast-icon"><i class="fa-solid fa-house-chimney"></i></div>
+                    <div class="forecast-content">
+                        <strong>בעוד ${daysToNextFamily} ימי מילואים (${nextFamilyDate.toLocaleDateString('he-IL')})</strong>
+                        במידה ותמשיך ברצף מעכשיו, תסגור 10 ימים נוספים ותקבל מענק משפחה נוסף. אם תמשיך כמדרג ${lastRates.name}, הסכום יעמוד על <b>${lastRates.family} ש"ח</b>.
+                    </div>
+                </div>
+            `;
+
+            if (totalDays < 60) {
+                let daysTo60 = 60 - totalDays;
+                let date60 = new Date(lastDateObj);
+                date60.setDate(date60.getDate() + daysTo60);
+
+                forecastHtml += `
+                    <div class="forecast-item">
+                        <div class="forecast-icon"><i class="fa-solid fa-bolt"></i></div>
+                        <div class="forecast-content">
+                            <strong>בעוד ${daysTo60} ימי מילואים (${date60.toLocaleDateString('he-IL')})</strong>
+                            תגיע ליום ה-60 לשנה זו ותתחיל לקבל את התגמול היומי.
+                        </div>
+                    </div>
+                `;
+            } else {
+                 forecastHtml += `
+                    <div class="forecast-item achieved">
+                        <div class="forecast-icon"><i class="fa-solid fa-check-double"></i></div>
+                        <div class="forecast-content">
+                            <strong>חצית 60 ימים השנה!</strong>
+                            כל יום מילואים נוסף שאתה עושה כמדרג '${lastRates.name}' מוסיף לך <b>${lastRates.daily} ש"ח</b> באופן ישיר.
+                        </div>
+                    </div>
+                `;
+            }
+            
+            forecastHtml += `<div style="font-size: 0.8rem; margin-top: 10px; color: #475569;">* התאריכים המצוינים משוערים ויוצאים מנקודת הנחה של שירות רציף החל מהתאריך האחרון שהוזן.</div>`;
+        }
+        document.getElementById('forecast-container').innerHTML = forecastHtml;
+    }
+
+    function buildMilestones(totalDays) {
+        const milestones = [
+            { days: 10, icon: "fa-star", title: "תגמול נוסף - מדרגה א'", desc: "כ-1,452 ש\"ח למענק השנתי." },
+            { days: 15, icon: "fa-star", title: "תגמול נוסף - מדרגה ב'", desc: "כ-2,904 ש\"ח למענק השנתי." },
+            { days: 20, icon: "fa-star", title: "תגמול נוסף - מדרגה ג'", desc: "כ-4,356 ש\"ח למענק השנתי." },
+            { days: 37, icon: "fa-trophy", title: "תגמול נוסף - מדרגה ד' (מקסימום!)", desc: "הגעת לתקרה! מענק שנתי מקסימלי של כ-5,808 ש\"ח.", highlight: true },
+            { days: 110, icon: "fa-percent", title: "מקסימום נקודות זיכוי במס", desc: "רף מקסימלי לזכאות ל-4 נקודות זיכוי במס הכנסה.", highlight: true }
+        ];
+
+        const container = document.getElementById('milestones-container');
+        container.innerHTML = '';
+
+        milestones.forEach(m => {
+            const isAchieved = totalDays >= m.days;
+            const progressPercent = Math.min(100, (totalDays / m.days) * 100);
+            
+            const div = document.createElement('div');
+            let classNames = ['milestone-card'];
+            if (isAchieved) classNames.push('achieved');
+            if (m.highlight) classNames.push('highlight');
+            div.className = classNames.join(' ');
+
+            let statusHTML = isAchieved 
+                ? `<span class="milestone-status status-achieved"><i class="fa-solid fa-check"></i> הושג</span>` 
+                : `<span class="milestone-status status-pending">עוד ${m.days - totalDays} ימים</span>`;
+
+            div.innerHTML = `
+                <div class="milestone-header">
+                    <div class="milestone-title">
+                        <i class="fa-solid ${m.icon}" style="color: ${m.highlight ? '#d97706' : 'var(--primary)'}"></i> 
+                        ${m.title}
+                    </div>
+                    ${statusHTML}
+                </div>
+                <p class="milestone-desc">${m.desc}</p>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: ${progressPercent}%"></div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function formatCurrency(num) {
+        return num.toLocaleString('he-IL') + ' ש"ח';
+    }
+
+    function animateValue(id, start, end, duration) {
+        if (start === end) return;
+        let range = end - start;
+        let current = start;
+        let increment = end > start ? 1 : -1;
+        let stepTime = Math.abs(Math.floor(duration / range));
+        let obj = document.getElementById(id);
+        let timer = setInterval(function() {
+            current += increment;
+            obj.innerHTML = current;
+            if (current == end) {
+                clearInterval(timer);
+            }
+        }, stepTime);
+    }
+</script>
+
+</body>
+</html>
